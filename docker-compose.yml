@@ -1,0 +1,16 @@
+version: '3'
+
+services:
+  db:
+    image: "postgres:11"
+    container_name: "stockx_true_to_size_databasedd"
+    environment:
+      POSTGRES_USER: "postgres"
+      POSTGRES_PASSWORD: "postgres"
+      POSTGRES_DB: "stockx_true_to_size"
+    ports:
+      - "54320:5432"
+    volumes:
+      - dbdata:/var/lib/postgresql/data
+volumes:
+    dbdata: {}
