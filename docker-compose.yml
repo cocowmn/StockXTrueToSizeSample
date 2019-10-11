@@ -3,7 +3,7 @@ version: '3'
 services:
   db:
     image: "postgres:11"
-    container_name: "stockx_true_to_size_databasedd"
+    container_name: "stockx_true_to_size_postgres"
     environment:
       POSTGRES_USER: "postgres"
       POSTGRES_PASSWORD: "postgres"

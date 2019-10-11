@@ -36,4 +36,7 @@ dependencies {
 apply plugin: 'docker-compose'
 dockerCompose.isRequiredBy(test)
 dockerCompose.isRequiredBy(build)
+
+jib.to.image = 'cocowmn/stockx_true_to_size'
+
 tasks.build.dependsOn tasks.jib
