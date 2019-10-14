@@ -30,20 +30,10 @@ public class SneakersController {
                     persistCrowdsourceData(sneaker, requestBody.getTrueToSizeValue());
                     return ResponseEntity.ok().build();
                 }).orElseGet(() -> {
-                    Sneaker sneaker = new Sneaker(requestBody.getId());
-                    sneakers.save(sneaker);
-
+                    Sneaker sneaker = persistSneaker(requestBody.getId());
                     persistCrowdsourceData(sneaker, requestBody.getTrueToSizeValue());
                     return ResponseEntity.ok().build();
                 });
-    }
-
-    private void persistCrowdsourceData(Sneaker sneaker, int trueToSizeValue) {
-        SneakerCrowdsourceData crowdsourceData = new SneakerCrowdsourceData();
-        crowdsourceData.setSneaker(sneaker);
-        crowdsourceData.setTrueToSizeValue(trueToSizeValue);
-
-        sneakerCrowdsourceData.save(crowdsourceData);
     }
 
     @GetMapping("/sneakers/{productId}")
@@ -68,13 +58,25 @@ public class SneakersController {
 
                     return ResponseEntity.ok(averageTrueToSize);
                 }).orElseGet(() -> {
-                    return ResponseEntity.ok().build();
+                    return ResponseEntity.status(204).body((double) -1);
                 });
     }
 
 
     private static boolean isValidTrueToSize(int value) {
         return value >= 1 && value <= 5;
+    }
+
+    private Sneaker persistSneaker(String sneakerName) {
+        return sneakers.save(new Sneaker(sneakerName));
+    }
+
+    private void persistCrowdsourceData(Sneaker sneaker, int trueToSizeValue) {
+        SneakerCrowdsourceData crowdsourceData = new SneakerCrowdsourceData();
+        crowdsourceData.setSneaker(sneaker);
+        crowdsourceData.setTrueToSizeValue(trueToSizeValue);
+
+        sneakerCrowdsourceData.save(crowdsourceData);
     }
 
 }

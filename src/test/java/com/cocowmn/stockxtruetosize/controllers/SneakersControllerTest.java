@@ -157,6 +157,24 @@ public class SneakersControllerTest {
         assertThat(trueToSizeValue).isEqualTo(averageTrueToSizeValue);
     }
 
+    @Test
+    public void getTrueToSizeValue_returns204_andNegativeOne_forSneakerWithNoData() throws Exception {
+        String sneakerInDatabase_withNoCrowdsourceData = UUID.randomUUID().toString();
+        String sneakerNotInDatabase = UUID.randomUUID().toString();
+
+        sneakers.save(new Sneaker(sneakerInDatabase_withNoCrowdsourceData));
+
+        mockMvc.perform(
+                get(uri(TEST_DOMAIN, sneakerInDatabase_withNoCrowdsourceData)))
+                .andDo(print())
+                .andExpect(status().is(204));
+        mockMvc.perform(
+                get(uri(TEST_DOMAIN, sneakerNotInDatabase)))
+                .andDo(print())
+                .andExpect(status().is(204));
+
+    }
+
     public static String uri(String... path) {
         return "/" + String.join("/", path);
     }
