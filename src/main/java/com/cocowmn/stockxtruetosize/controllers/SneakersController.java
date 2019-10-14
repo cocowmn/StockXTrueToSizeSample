@@ -21,7 +21,6 @@ public class SneakersController {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(SneakersController.class);
 
-
     @Autowired SneakerRepository sneakers;
     @Autowired SneakerCrowdsourceRepository sneakerCrowdsourceData;
 
@@ -72,9 +71,8 @@ public class SneakersController {
             return sneakers.findById(productId)
                     .map(sneaker -> {
                         try {
-                            Optional<Double> getAverageTrueToSize = getAverageTrueToSize(sneaker);
-                            return getAverageTrueToSize.isPresent()
-                                    ? getTrueToSizeResponseEntity(getAverageTrueToSize.get())
+                            return getAverageTrueToSize(sneaker).isPresent()
+                                    ? getTrueToSizeResponseEntity(getAverageTrueToSize(sneaker).get())
                                     : getNoDataAvailableResponseEntity();
                         } catch (Exception exception) {
                             return ResponseEntity.status(500).body((double) -1);
@@ -106,10 +104,8 @@ public class SneakersController {
     }
 
     private Optional<Double> getAverageTrueToSize(Sneaker sneaker) {
-        List<SneakerCrowdsourceData> crowdsourceData =
-                sneakerCrowdsourceData.findBySneaker(sneaker.getName());
-
-        List<Integer> trueToSizeValues = crowdsourceData.stream()
+        List<Integer> trueToSizeValues = sneakerCrowdsourceData.findBySneaker(sneaker.getName())
+                .stream()
                 .map(SneakerCrowdsourceData::getTrueToSizeValue)
                 .collect(Collectors.toList());
 
@@ -134,8 +130,7 @@ public class SneakersController {
 
     private static boolean isMalformedRequest(NewCrowdsourceData requestBody) {
         return Objects.nonNull(requestBody)
-                && Objects.nonNull(requestBody.getId())
-                && Objects.nonNull(requestBody.getTrueToSizeValue());
+                && Objects.nonNull(requestBody.getId());
     }
 
 }
