@@ -104,6 +104,7 @@ public class SneakersController {
     }
 
     private Optional<Double> getAverageTrueToSize(Sneaker sneaker) {
+//        TODO: don't calculate this in application; turn into sql query
         List<Integer> trueToSizeValues = sneakerCrowdsourceData.findBySneaker(sneaker.getName())
                 .stream()
                 .map(SneakerCrowdsourceData::getTrueToSizeValue)
