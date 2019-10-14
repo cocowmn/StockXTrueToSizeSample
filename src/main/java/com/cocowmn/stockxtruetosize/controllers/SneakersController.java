@@ -9,7 +9,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @RestController
 public class SneakersController {
@@ -23,9 +25,7 @@ public class SneakersController {
             return ResponseEntity.badRequest().build();
         }
 
-        Optional<Sneaker> findSneaker = sneakers.findById(requestBody.getId());
-
-        return findSneaker
+        return sneakers.findById(requestBody.getId())
                 .map(sneaker -> {
                     persistCrowdsourceData(sneaker, requestBody.getTrueToSizeValue());
                     return ResponseEntity.ok().build();
@@ -47,8 +47,29 @@ public class SneakersController {
     }
 
     @GetMapping("/sneakers/{productId}")
-    public ResponseEntity<Integer> getTrueToSizeValue(@PathVariable String productId) {
-        return ResponseEntity.ok().build();
+    public ResponseEntity<Double> getTrueToSizeValue(@PathVariable String productId) {
+        return sneakers.findById(productId)
+                .map(sneaker -> {
+                    List<SneakerCrowdsourceData> crowdsourceData =
+                            sneakerCrowdsourceData.findBySneaker(sneaker.getName());
+
+                    List<Integer> trueToSizeValues = crowdsourceData.stream()
+                            .map(SneakerCrowdsourceData::getTrueToSizeValue)
+                            .collect(Collectors.toList());
+
+                    Optional<Integer> sum = trueToSizeValues.stream().reduce(Integer::sum);
+
+                    if(sum.isEmpty()) {
+                        return ResponseEntity.status(204).body((double) -1);
+                    }
+
+                    double averageTrueToSize =
+                            ((double) sum.get()) / trueToSizeValues.size();
+
+                    return ResponseEntity.ok(averageTrueToSize);
+                }).orElseGet(() -> {
+                    return ResponseEntity.ok().build();
+                });
     }
 
 

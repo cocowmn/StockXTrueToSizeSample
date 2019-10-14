@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -126,7 +127,34 @@ public class SneakersControllerTest {
                     .andDo(print())
                     .andExpect(status().isBadRequest());
         }
+    }
 
+    @Test
+    public void getTrueToSizeValue_returns200_andValue_forExistingSneaker() throws Exception {
+        String sneakerName = UUID.randomUUID().toString();
+        List<Integer> trueToSizeValues = Arrays.asList(1, 2, 3, 3, 3, 3, 3, 4, 4, 5, 5);
+
+        for (Integer trueToSizeValue : trueToSizeValues) {
+            JSONObject requestBody = createAddSneakerDataRequest(sneakerName, trueToSizeValue);
+
+            mockMvc.perform(
+                    post(uri(TEST_DOMAIN, "crowdsource"))
+                            .content(requestBody.toString())
+                            .contentType("application/json"))
+                    .andDo(print())
+                    .andExpect(status().isOk());
+
+        }
+
+        mockMvc.perform(
+                get(uri(TEST_DOMAIN), sneakerName))
+                .andDo(print())
+                .andExpect(status().isOk());
+
+        double averageTrueToSizeValue = ((double) trueToSizeValues.stream().reduce(Integer::sum).get()) / trueToSizeValues.size();
+
+        Double trueToSizeValue = controller.getTrueToSizeValue(sneakerName).getBody();
+        assertThat(trueToSizeValue).isEqualTo(averageTrueToSizeValue);
     }
 
     public static String uri(String... path) {
