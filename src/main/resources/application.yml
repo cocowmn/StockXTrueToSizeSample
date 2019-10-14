@@ -14,3 +14,13 @@ spring:
 logging:
   level:
     root: DEBUG
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "prometheus,metrics,health"
+    health:
+      show-details: always
+  server:
+    port: 8079

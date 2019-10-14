@@ -30,8 +30,11 @@ dependencies {
     implementation 'io.prometheus:simpleclient_hotspot:0.7.0'
     implementation 'io.prometheus:simpleclient_httpserver:0.7.0'
     implementation 'io.prometheus:simpleclient_pushgateway:0.7.0'
+    implementation 'io.micrometer:micrometer-registry-prometheus:1.2.0'
 
     compileOnly 'org.projectlombok:lombok'
+
+    compile("org.springframework.boot:spring-boot-starter-actuator")
 
     compile group: 'ch.qos.logback', name:'logback-classic', version: '1.0.9'
     compile group: 'ch.qos.logback', name:'logback-core', version: '1.0.9'
@@ -42,11 +45,11 @@ dependencies {
     testImplementation 'org.mockito:mockito-core:3.1.0'
 }
 
+tasks.build.dependsOn tasks.jib
+
+jib.to.image = 'cocowmn/stockx_true_to_size'
+
 apply plugin: 'docker-compose'
 dockerCompose.isRequiredBy(test)
 dockerCompose.isRequiredBy(build)
 dockerCompose.isRequiredBy(bootRun)
-
-jib.to.image = 'cocowmn/stockx_true_to_size'
-
-tasks.build.dependsOn tasks.jib

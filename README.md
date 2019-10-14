@@ -59,8 +59,8 @@ given `productId`
 
 ### Development Framework
 This application is built with [Spring Framework](https://github.com/spring-projects/spring-framework), which eases the
-development process by providing dependency injection and annotation-driven abstractions for interacting with both the 
-database and HTTP Requests. 
+development process by providing essentials like dependency injection and HTTP exposure, and helps generate readable,
+maintainable code with easy-to-read annotation-driven abstractions as well as a gamut of customizable testing utilities.
 
 ### Dependency Manager
 This project is using Gradle to execute builds, run automated tests, and manage dependencies.
@@ -74,7 +74,11 @@ $ gradle test
 
 ### Metrics
 This project uses [Prometheus](https://github.com/prometheus/prometheus) for reporting metrics. Provided metrics are 
-exposed using Spring AOP.
+exposed via Spring Boot Actuator and Prometheus. This appears as a separate server that is running on port `8079` 
+(configurable via `src/main/resources/application.yml`) and is accessible by executing the following request:
+```
+[GET] localhost:8079/actuator/prometheus
+``` 
 
 ### Persistence
 This application uses Postgres, a SQL database system. Internally, the source code leverages Spring Data JPA for all
@@ -105,3 +109,8 @@ requires data normalization, error approximation, similar-key-lookups, etc. For 
 product identifier would be ideal, such as an external UPC or an internal SKU; a product lookup could be provided to 
 users via a front-end application. For this project, I've opted out of a complex normalization strategy due to lack of
 specification, though the code is written with this type of refactoring in mind.
+
+<sup>3</sup> I would never proclaim to be an infrastructure expert; I've designed this system to the best of my ability,
+though porting to additional developer machines or executing remotely may require some tweaking and configuring here and 
+there. I also would like to thank whoever is reading this last line of the README for their time and consideration. I've
+had the opportunity to dabble in areas of the process I'm less familiar with and have learned a lot from this project.
