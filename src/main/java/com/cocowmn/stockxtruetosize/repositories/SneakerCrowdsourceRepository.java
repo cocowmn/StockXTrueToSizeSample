@@ -14,4 +14,9 @@ public interface SneakerCrowdsourceRepository extends JpaRepository<SneakerCrowd
     @Query("SELECT data FROM SneakerCrowdsourceData data WHERE lower(data.sneaker) LIKE lower(?1)")
     List<SneakerCrowdsourceData> findBySneaker(String sneaker);
 
+    Integer countSneakerCrowdsourceDataBySneaker_Name(String sneaker);
+
+    @Query("SELECT avg(data.trueToSizeValue) FROM SneakerCrowdsourceData data WHERE lower(data.sneaker) LIKE lower(?1)")
+    Double getTrueToSizeValue(String sneaker);
+
 }

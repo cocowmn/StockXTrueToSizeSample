@@ -11,18 +11,23 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 @RestController
 public class SneakersController {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(SneakersController.class);
 
-    @Autowired SneakerRepository sneakers;
-    @Autowired SneakerCrowdsourceRepository sneakerCrowdsourceData;
+    private final SneakerRepository sneakers;
+    private final SneakerCrowdsourceRepository sneakerCrowdsourceData;
+
+    public SneakersController(
+            @Autowired SneakerRepository sneakers,
+            @Autowired SneakerCrowdsourceRepository sneakerCrowdsourceData) {
+        this.sneakers = sneakers;
+        this.sneakerCrowdsourceData = sneakerCrowdsourceData;
+    }
 
     @PostMapping("/sneakers/crowdsource")
     public ResponseEntity addCrowdsourcedData(@RequestBody NewCrowdsourceData requestBody) {
@@ -71,8 +76,9 @@ public class SneakersController {
             return sneakers.findById(productId)
                     .map(sneaker -> {
                         try {
-                            return getAverageTrueToSize(sneaker).isPresent()
-                                    ? getTrueToSizeResponseEntity(getAverageTrueToSize(sneaker).get())
+                            Optional<Double> averageTrueToSize = getAverageTrueToSize(sneaker);
+                            return averageTrueToSize.isPresent()
+                                    ? getTrueToSizeResponseEntity(averageTrueToSize.get())
                                     : getNoDataAvailableResponseEntity();
                         } catch (Exception exception) {
                             return ResponseEntity.status(500).body((double) -1);
@@ -104,17 +110,11 @@ public class SneakersController {
     }
 
     private Optional<Double> getAverageTrueToSize(Sneaker sneaker) {
-//        TODO: don't calculate this in application; turn into sql query
-        List<Integer> trueToSizeValues = sneakerCrowdsourceData.findBySneaker(sneaker.getName())
-                .stream()
-                .map(SneakerCrowdsourceData::getTrueToSizeValue)
-                .collect(Collectors.toList());
+        int recordsAvailable = sneakerCrowdsourceData.countSneakerCrowdsourceDataBySneaker_Name(sneaker.getName());
 
-        return trueToSizeValues.isEmpty()
-            ? Optional.empty()
-            : trueToSizeValues.stream()
-                .reduce(Integer::sum)
-                .map(sum -> (double) sum / trueToSizeValues.size());
+        return recordsAvailable == 0
+                ? Optional.empty()
+                : Optional.of(sneakerCrowdsourceData.getTrueToSizeValue(sneaker.getName()));
     }
 
     private ResponseEntity<Double> getTrueToSizeResponseEntity(double averageTrueToSize) {

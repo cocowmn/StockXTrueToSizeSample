@@ -4,6 +4,7 @@ import com.cocowmn.stockxtruetosize.models.Sneaker;
 import com.cocowmn.stockxtruetosize.models.SneakerCrowdsourceData;
 import com.cocowmn.stockxtruetosize.repositories.SneakerCrowdsourceRepository;
 import com.cocowmn.stockxtruetosize.repositories.SneakerRepository;
+import org.assertj.core.data.Offset;
 import org.json.JSONObject;
 import org.junit.Before;
 import org.junit.Test;
@@ -107,9 +108,9 @@ public class SneakersControllerTest extends SneakersControllerTestBase {
                     double receivedAverageTrueToSizeValue =
                             Double.parseDouble(handler.getResponse().getContentAsString());
                     double actualAverageTrueToSizeValue =
-                            ((double) trueToSizeValues.stream().reduce(Integer::sum).get()) / trueToSizeValues.size();
+                            trueToSizeValues.stream().mapToDouble(x -> x).average().orElse(Double.MIN_VALUE);
 
-                    assertThat(receivedAverageTrueToSizeValue).isEqualTo(actualAverageTrueToSizeValue);
+                    assertThat(receivedAverageTrueToSizeValue).isCloseTo(actualAverageTrueToSizeValue, Offset.offset(0.001));
                 })
                 .andExpect(status().isOk());
     }
