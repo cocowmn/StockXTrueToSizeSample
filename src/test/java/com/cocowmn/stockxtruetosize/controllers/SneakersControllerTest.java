@@ -63,6 +63,40 @@ public class SneakersControllerTest {
     }
 
     @Test
+    public void addSneakerData_forNewSneaker_whenSuccessful_persistsToDatabase() throws Exception {
+        String sneakerName = UUID.randomUUID().toString();
+        int trueToSizeValue = 3;
+
+        JSONObject requestBody = createAddSneakerDataRequest(sneakerName, trueToSizeValue);
+
+        mockMvc.perform(
+                post(uri(TEST_DOMAIN, "crowdsource"))
+                        .content(requestBody.toString())
+                        .contentType("application/json"))
+                .andDo(print())
+                .andExpect(status().isOk());
+
+        assertThat(sneakers.findById(sneakerName)).isPresent();
+        assertThat(crowdsource.findBySneaker(sneakerName)).isNotEmpty();
+    }
+
+    @Test
+    public void addSneakerData_forExistingSneaker_whenSuccessful_persistsToDatabase() throws Exception {
+        int trueToSizeValue = 5;
+
+        JSONObject requestBody = createAddSneakerDataRequest(SNEAKER_IN_DATABASE, trueToSizeValue);
+
+        mockMvc.perform(
+                post(uri(TEST_DOMAIN, "crowdsource"))
+                        .content(requestBody.toString())
+                        .contentType("application/json"))
+                .andDo(print())
+                .andExpect(status().isOk());
+
+        assertThat(crowdsource.findBySneaker(SNEAKER_IN_DATABASE)).hasSize(2);
+    }
+
+    @Test
     public void addSneakerData_returns200_whenValidDataProvided() throws Exception {
         String sneakerName = UUID.randomUUID().toString();
         int trueToSizeValue = 3;
