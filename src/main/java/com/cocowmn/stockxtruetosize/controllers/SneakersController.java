@@ -25,26 +25,46 @@ public class SneakersController {
             return ResponseEntity.badRequest().build();
         }
 
-        return sneakers.findById(requestBody.getId())
-                .map(sneaker -> {
-                    persistCrowdsourceData(sneaker, requestBody.getTrueToSizeValue());
-                    return ResponseEntity.ok().build();
-                }).orElseGet(() -> {
-                    Sneaker sneaker = persistSneaker(requestBody.getId());
-                    persistCrowdsourceData(sneaker, requestBody.getTrueToSizeValue());
-                    return ResponseEntity.ok().build();
-                });
+        try {
+            return sneakers.findById(requestBody.getId())
+                    .map(sneaker -> {
+                        try {
+                            persistCrowdsourceData(sneaker, requestBody.getTrueToSizeValue());
+                            return ResponseEntity.ok().build();
+                        } catch (Exception exception) {
+                            return ResponseEntity.status(500).build();
+                        }
+                    }).orElseGet(() -> {
+                        try {
+                            Sneaker sneaker = persistSneaker(requestBody.getId());
+                            persistCrowdsourceData(sneaker, requestBody.getTrueToSizeValue());
+                            return ResponseEntity.ok().build();
+                        } catch (Exception exception) {
+                            return ResponseEntity.status(500).build();
+                        }
+                    });
+        } catch (Exception exception) {
+            return ResponseEntity.status(500).build();
+        }
     }
 
     @GetMapping("/sneakers/{productId}")
     public ResponseEntity<Double> getTrueToSizeValue(@PathVariable String productId) {
-        return sneakers.findById(productId)
-                .map(sneaker -> {
-                    Optional<Double> getAverageTrueToSize = getAverageTrueToSize(sneaker);
-                    return getAverageTrueToSize.isPresent()
-                            ? getTrueToSizeResponseEntity(getAverageTrueToSize.get())
-                            : getNoDataAvailableResponseEntity();
-                }).orElseGet(this::getNoDataAvailableResponseEntity);
+        try {
+            return sneakers.findById(productId)
+                    .map(sneaker -> {
+                        try {
+                            Optional<Double> getAverageTrueToSize = getAverageTrueToSize(sneaker);
+                            return getAverageTrueToSize.isPresent()
+                                    ? getTrueToSizeResponseEntity(getAverageTrueToSize.get())
+                                    : getNoDataAvailableResponseEntity();
+                        } catch (Exception exception) {
+                            return ResponseEntity.status(500).body((double) -1);
+                        }
+                    }).orElseGet(this::getNoDataAvailableResponseEntity);
+        } catch (Exception exception) {
+            return ResponseEntity.status(500).build();
+        }
     }
 
     private Optional<Double> getAverageTrueToSize(Sneaker sneaker) {

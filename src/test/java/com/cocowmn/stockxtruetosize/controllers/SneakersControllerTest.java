@@ -4,7 +4,6 @@ import com.cocowmn.stockxtruetosize.models.Sneaker;
 import com.cocowmn.stockxtruetosize.models.SneakerCrowdsourceData;
 import com.cocowmn.stockxtruetosize.repositories.SneakerCrowdsourceRepository;
 import com.cocowmn.stockxtruetosize.repositories.SneakerRepository;
-import org.json.JSONException;
 import org.json.JSONObject;
 import org.junit.Before;
 import org.junit.Test;
@@ -13,7 +12,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringRunner;
-import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.Arrays;
 import java.util.List;
@@ -21,14 +19,13 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @AutoConfigureMockMvc
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @RunWith(SpringRunner.class)
-public class SneakersControllerTest {
+public class SneakersControllerTest extends SneakersControllerTestBase {
 
     private static final String TEST_DOMAIN = "sneakers";
     private static final String SNEAKER_IN_DATABASE = "adidas Yeezy";
@@ -38,9 +35,6 @@ public class SneakersControllerTest {
 
     @Autowired private SneakerRepository sneakers;
     @Autowired private SneakerCrowdsourceRepository crowdsource;
-
-    @Autowired private MockMvc mockMvc;
-    @Autowired private SneakersController controller;
 
 
     @Before
@@ -57,12 +51,6 @@ public class SneakersControllerTest {
 
         assertThat(sneakers.findById(SNEAKER_IN_DATABASE)).isPresent();
         assertThat(crowdsource.findById(CROWDSOURCE_ID_IN_DATABASE)).isPresent();
-    }
-
-
-    @Test
-    public void contextloads() {
-        assertThat(controller).isNotNull();
     }
 
     @Test
@@ -135,47 +123,6 @@ public class SneakersControllerTest {
 
         getSneakerNoDataAvailable(sneakerInDatabase_withNoCrowdsourceData);
         getSneakerNoDataAvailable(sneakerNotInDatabase);
-    }
-
-
-    private void postSuccessfulCrowdsourceData(String sneakerName, int trueToSizeValue) throws Exception {
-        mockMvc.perform(
-                post(uri(TEST_DOMAIN, "crowdsource"))
-                        .content(createAddSneakerDataRequest(sneakerName, trueToSizeValue).toString())
-                        .contentType("application/json"))
-                .andDo(print())
-                .andExpect(status().isOk());
-    }
-
-    private void postFailedCrowdsourceData(String sneakerName, int trueToSizeValue) throws Exception {
-        mockMvc.perform(
-                post(uri(TEST_DOMAIN, "crowdsource"))
-                        .content(createAddSneakerDataRequest(sneakerName, trueToSizeValue).toString())
-                        .contentType("application/json"))
-                .andDo(print())
-                .andExpect(status().isBadRequest());
-    }
-
-    private void getSneakerNoDataAvailable(String sneakerName) throws Exception {
-        mockMvc.perform(
-                get(uri(TEST_DOMAIN, sneakerName)))
-                .andDo(print())
-                .andExpect(status().is(204));
-    }
-
-    private static String uri(String... path) {
-        return "/" + String.join("/", path);
-    }
-
-    private static JSONObject createAddSneakerDataRequest(String sneakerName, int trueToSizeValue) {
-        JSONObject requestBody = new JSONObject();
-        try {
-            requestBody.put("id", sneakerName);
-            requestBody.put("trueToSizeValue", trueToSizeValue);
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
-        return requestBody;
     }
 
 }
