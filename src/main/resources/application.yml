@@ -10,3 +10,7 @@ spring:
     username: postgres
     password: postgres
     driverClassName: org.postgresql.Driver
+
+logging:
+  level:
+    root: DEBUG
