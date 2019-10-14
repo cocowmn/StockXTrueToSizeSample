@@ -33,39 +33,46 @@ public class SneakersController {
     public ResponseEntity addCrowdsourcedData(@RequestBody NewCrowdsourceData requestBody) {
         if(isMalformedRequest(requestBody)) {
             LOGGER.debug("Received malformed crowdsource data from client");
+            return ResponseEntity.badRequest().build();
         }
 
-        if(!isValidTrueToSize(requestBody.getTrueToSizeValue())) {
+        String sneakerName = requestBody.getId();
+        int trueToSizeValue = requestBody.getTrueToSizeValue();
+
+        if(!isValidTrueToSize(trueToSizeValue)) {
             LOGGER.debug(
                     "Received invalid True-to-size crowdsource data from client: {}",
-                    requestBody.getTrueToSizeValue());
+                    trueToSizeValue);
             return ResponseEntity.badRequest().build();
         }
 
         try {
-            return sneakers.findById(requestBody.getId())
+            return sneakers.findById(sneakerName)
                     .map(sneaker -> {
                         try {
-                            persistCrowdsourceData(sneaker, requestBody.getTrueToSizeValue());
+                            persistCrowdsourceData(sneaker, trueToSizeValue);
+                            logSuccessfulCrowdsourcePersistence(trueToSizeValue, sneaker);
                             return ResponseEntity.ok().build();
                         } catch (Exception exception) {
-                            LOGGER.error("Failure communicating with Crowdsource Repository");
+                            logRepositoryCommunicationFailure("crowdsource");
                             return ResponseEntity.status(500).build();
                         }
                     }).orElseGet(() -> {
                         try {
-                            Sneaker sneaker = persistSneaker(requestBody.getId());
-                            persistCrowdsourceData(sneaker, requestBody.getTrueToSizeValue());
+                            Sneaker sneaker = persistSneaker(sneakerName);
+                            logSuccessfulSneakerPersistence(sneaker.getName());
+
+                            persistCrowdsourceData(sneaker, trueToSizeValue);
+                            logSuccessfulCrowdsourcePersistence(trueToSizeValue, sneaker);
+
                             return ResponseEntity.ok().build();
                         } catch (Exception exception) {
-                            LOGGER.error("Failure communicating with Sneaker Repository");
+                            logRepositoryCommunicationFailure("sneaker");
                             return ResponseEntity.status(500).build();
                         }
                     });
         } catch (Exception exception) {
-            LOGGER.error(
-                    "Failure retrieving Sneaker( {} ) from Sneaker Repository",
-                    requestBody.getId());
+            logSneakerRetrievalFailure(sneakerName);
             return ResponseEntity.status(500).build();
         }
     }
@@ -85,16 +92,13 @@ public class SneakersController {
                         }
                     }).orElseGet(this::getNoDataAvailableResponseEntity);
         } catch (Exception exception) {
-            LOGGER.error(
-                    "Failure retrieving Sneaker( {} ) from Sneaker Repository",
-                    productId);
+            logSneakerRetrievalFailure(productId);
             return ResponseEntity.status(500).build();
         }
     }
 
     private Sneaker persistSneaker(String sneakerName) {
         Sneaker sneaker = sneakers.save(new Sneaker(sneakerName));
-        LOGGER.trace("Sneaker( {} ) persisted to database", sneaker.getName());
         return sneaker;
     }
 
@@ -104,9 +108,6 @@ public class SneakersController {
         crowdsourceData.setTrueToSizeValue(trueToSizeValue);
 
         sneakerCrowdsourceData.save(crowdsourceData);
-        LOGGER.trace(
-                "Crowdsource Data { Sneaker( {} ), True-to-Size Value( {} ) } persisted to database",
-                sneaker.getName(), trueToSizeValue);
     }
 
     private Optional<Double> getAverageTrueToSize(Sneaker sneaker) {
@@ -125,13 +126,35 @@ public class SneakersController {
         return ResponseEntity.status(204).body((double) -1);
     }
 
+    private void logSneakerRetrievalFailure(String sneakerName) {
+        LOGGER.error(
+                "Failure retrieving Sneaker( {} ) from Sneaker Repository",
+                sneakerName);
+    }
+
+    private void logSuccessfulCrowdsourcePersistence(int trueToSizeValue, Sneaker sneaker) {
+        LOGGER.trace(
+                "Crowdsource Data { Sneaker( {} ), True-to-Size Value( {} ) } persisted to database",
+                sneaker.getName(), trueToSizeValue);
+    }
+
+    private void logSuccessfulSneakerPersistence(String sneakerId) {
+        LOGGER.trace("Sneaker( {} ) persisted to database", sneakerId);
+    }
+
+    private void logRepositoryCommunicationFailure(String repositoryName) {
+        LOGGER.error(
+                "Failure communicating with {}{} Repository",
+                Character.toUpperCase(repositoryName.charAt(0)),
+                repositoryName.substring(1));
+    }
+
     private static boolean isValidTrueToSize(int value) {
         return value >= 1 && value <= 5;
     }
 
     private static boolean isMalformedRequest(NewCrowdsourceData requestBody) {
-        return Objects.nonNull(requestBody)
-                && Objects.nonNull(requestBody.getId());
+        return Objects.isNull(requestBody) || Objects.isNull(requestBody.getId());
     }
 
 }

@@ -11,8 +11,7 @@ import java.util.List;
 @Repository
 public interface SneakerCrowdsourceRepository extends JpaRepository<SneakerCrowdsourceData, Long> {
 
-    @Query("SELECT data FROM SneakerCrowdsourceData data WHERE lower(data.sneaker) LIKE lower(?1)")
-    List<SneakerCrowdsourceData> findBySneaker(String sneaker);
+    List<SneakerCrowdsourceData> findBySneaker_Name(String sneaker);
 
     Integer countSneakerCrowdsourceDataBySneaker_Name(String sneaker);
 

@@ -39,7 +39,7 @@ public class SneakersControllerMockDatabaseTest extends SneakersControllerTestBa
         when(sneakers.findById(anyString())).thenThrow(new RuntimeException());
 
         when(crowdsource.save(any())).thenThrow(new RuntimeException());
-        when(crowdsource.findBySneaker(anyString())).thenThrow(new RuntimeException());
+        when(crowdsource.findBySneaker_Name(anyString())).thenThrow(new RuntimeException());
     }
 
     @Test

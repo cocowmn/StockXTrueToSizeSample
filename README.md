@@ -1,5 +1,5 @@
 # StockX True-to-Size Sample
-True-To-Size Sneaker software sample for StockX
+True-To-Size Sneaker software sample for StockX. Full requirements outlined in `project-spec.pdf`.
 
 ## Pre-Requisites
 This application requires Docker to be installed on the target machine. Either a local installation of `gradle` or the 

@@ -62,7 +62,7 @@ public class SneakersControllerTest extends SneakersControllerTestBase {
         postSuccessfulCrowdsourceData(sneakerName, trueToSizeValue);
 
         assertThat(sneakers.findById(sneakerName)).isPresent();
-        assertThat(crowdsource.findBySneaker(sneakerName)).isNotEmpty();
+        assertThat(crowdsource.findBySneaker_Name(sneakerName)).isNotEmpty();
     }
 
     @Test
@@ -70,7 +70,7 @@ public class SneakersControllerTest extends SneakersControllerTestBase {
         int trueToSizeValue = 5;
         postSuccessfulCrowdsourceData(SNEAKER_IN_DATABASE, trueToSizeValue);
 
-        assertThat(crowdsource.findBySneaker(SNEAKER_IN_DATABASE)).hasSize(2);
+        assertThat(crowdsource.findBySneaker_Name(SNEAKER_IN_DATABASE)).hasSize(2);
     }
 
     @Test
