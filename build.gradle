@@ -45,6 +45,7 @@ dependencies {
 apply plugin: 'docker-compose'
 dockerCompose.isRequiredBy(test)
 dockerCompose.isRequiredBy(build)
+dockerCompose.isRequiredBy(bootRun)
 
 jib.to.image = 'cocowmn/stockx_true_to_size'
 
