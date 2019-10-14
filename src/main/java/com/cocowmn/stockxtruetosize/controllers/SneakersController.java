@@ -40,26 +40,34 @@ public class SneakersController {
     public ResponseEntity<Double> getTrueToSizeValue(@PathVariable String productId) {
         return sneakers.findById(productId)
                 .map(sneaker -> {
-                    List<SneakerCrowdsourceData> crowdsourceData =
-                            sneakerCrowdsourceData.findBySneaker(sneaker.getName());
+                    Optional<Double> getAverageTrueToSize = getAverageTrueToSize(sneaker);
+                    return getAverageTrueToSize.isPresent()
+                            ? getTrueToSizeResponseEntity(getAverageTrueToSize.get())
+                            : getNoDataAvailableResponseEntity();
+                }).orElseGet(this::getNoDataAvailableResponseEntity);
+    }
 
-                    List<Integer> trueToSizeValues = crowdsourceData.stream()
-                            .map(SneakerCrowdsourceData::getTrueToSizeValue)
-                            .collect(Collectors.toList());
+    private Optional<Double> getAverageTrueToSize(Sneaker sneaker) {
+        List<SneakerCrowdsourceData> crowdsourceData =
+                sneakerCrowdsourceData.findBySneaker(sneaker.getName());
 
-                    Optional<Integer> sum = trueToSizeValues.stream().reduce(Integer::sum);
+        List<Integer> trueToSizeValues = crowdsourceData.stream()
+                .map(SneakerCrowdsourceData::getTrueToSizeValue)
+                .collect(Collectors.toList());
 
-                    if(sum.isEmpty()) {
-                        return ResponseEntity.status(204).body((double) -1);
-                    }
+        return trueToSizeValues.isEmpty()
+            ? Optional.empty()
+            : trueToSizeValues.stream()
+                .reduce(Integer::sum)
+                .map(sum -> (double) sum / trueToSizeValues.size());
+    }
 
-                    double averageTrueToSize =
-                            ((double) sum.get()) / trueToSizeValues.size();
+    private ResponseEntity<Double> getTrueToSizeResponseEntity(double averageTrueToSize) {
+        return ResponseEntity.ok(averageTrueToSize);
+    }
 
-                    return ResponseEntity.ok(averageTrueToSize);
-                }).orElseGet(() -> {
-                    return ResponseEntity.status(204).body((double) -1);
-                });
+    private ResponseEntity<Double> getNoDataAvailableResponseEntity() {
+        return ResponseEntity.status(204).body((double) -1);
     }
 
 

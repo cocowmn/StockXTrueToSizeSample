@@ -42,8 +42,9 @@ public class SneakersControllerTest {
     @Autowired private MockMvc mockMvc;
     @Autowired private SneakersController controller;
 
+
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         Sneaker sneaker = new Sneaker(SNEAKER_IN_DATABASE);
         SneakerCrowdsourceData crowdsourceData = new SneakerCrowdsourceData(
                 CROWDSOURCE_ID_IN_DATABASE,
@@ -58,8 +59,9 @@ public class SneakersControllerTest {
         assertThat(crowdsource.findById(CROWDSOURCE_ID_IN_DATABASE)).isPresent();
     }
 
+
     @Test
-    public void contextloads() throws Exception {
+    public void contextloads() {
         assertThat(controller).isNotNull();
     }
 
@@ -68,14 +70,7 @@ public class SneakersControllerTest {
         String sneakerName = UUID.randomUUID().toString();
         int trueToSizeValue = 3;
 
-        JSONObject requestBody = createAddSneakerDataRequest(sneakerName, trueToSizeValue);
-
-        mockMvc.perform(
-                post(uri(TEST_DOMAIN, "crowdsource"))
-                        .content(requestBody.toString())
-                        .contentType("application/json"))
-                .andDo(print())
-                .andExpect(status().isOk());
+        postSuccessfulCrowdsourceData(sneakerName, trueToSizeValue);
 
         assertThat(sneakers.findById(sneakerName)).isPresent();
         assertThat(crowdsource.findBySneaker(sneakerName)).isNotEmpty();
@@ -84,15 +79,7 @@ public class SneakersControllerTest {
     @Test
     public void addSneakerData_forExistingSneaker_whenSuccessful_persistsToDatabase() throws Exception {
         int trueToSizeValue = 5;
-
-        JSONObject requestBody = createAddSneakerDataRequest(SNEAKER_IN_DATABASE, trueToSizeValue);
-
-        mockMvc.perform(
-                post(uri(TEST_DOMAIN, "crowdsource"))
-                        .content(requestBody.toString())
-                        .contentType("application/json"))
-                .andDo(print())
-                .andExpect(status().isOk());
+        postSuccessfulCrowdsourceData(SNEAKER_IN_DATABASE, trueToSizeValue);
 
         assertThat(crowdsource.findBySneaker(SNEAKER_IN_DATABASE)).hasSize(2);
     }
@@ -102,14 +89,7 @@ public class SneakersControllerTest {
         String sneakerName = UUID.randomUUID().toString();
         int trueToSizeValue = 3;
 
-        JSONObject requestBody = createAddSneakerDataRequest(sneakerName, trueToSizeValue);
-
-        mockMvc.perform(
-                post(uri(TEST_DOMAIN, "crowdsource"))
-                        .content(requestBody.toString())
-                        .contentType("application/json"))
-                .andDo(print())
-                .andExpect(status().isOk());
+        postSuccessfulCrowdsourceData(sneakerName, trueToSizeValue);
     }
 
     @Test
@@ -118,14 +98,7 @@ public class SneakersControllerTest {
         List<Integer> invalidSizes = Arrays.asList(-1, 0, 6, Integer.MAX_VALUE, Integer.MIN_VALUE);
 
         for (Integer invalidSize : invalidSizes) {
-            JSONObject requestBody = createAddSneakerDataRequest(sneakerName, invalidSize);
-
-            mockMvc.perform(
-                    post(uri(TEST_DOMAIN, "crowdsource"))
-                            .content(requestBody.toString())
-                            .contentType("application/json"))
-                    .andDo(print())
-                    .andExpect(status().isBadRequest());
+            postFailedCrowdsourceData(sneakerName, invalidSize);
         }
     }
 
@@ -137,24 +110,20 @@ public class SneakersControllerTest {
         for (Integer trueToSizeValue : trueToSizeValues) {
             JSONObject requestBody = createAddSneakerDataRequest(sneakerName, trueToSizeValue);
 
-            mockMvc.perform(
-                    post(uri(TEST_DOMAIN, "crowdsource"))
-                            .content(requestBody.toString())
-                            .contentType("application/json"))
-                    .andDo(print())
-                    .andExpect(status().isOk());
-
+            postSuccessfulCrowdsourceData(sneakerName, trueToSizeValue);
         }
 
-        mockMvc.perform(
-                get(uri(TEST_DOMAIN), sneakerName))
+        mockMvc.perform(get(uri(TEST_DOMAIN, sneakerName)))
                 .andDo(print())
+                .andDo(handler -> {
+                    double receivedAverageTrueToSizeValue =
+                            Double.parseDouble(handler.getResponse().getContentAsString());
+                    double actualAverageTrueToSizeValue =
+                            ((double) trueToSizeValues.stream().reduce(Integer::sum).get()) / trueToSizeValues.size();
+
+                    assertThat(receivedAverageTrueToSizeValue).isEqualTo(actualAverageTrueToSizeValue);
+                })
                 .andExpect(status().isOk());
-
-        double averageTrueToSizeValue = ((double) trueToSizeValues.stream().reduce(Integer::sum).get()) / trueToSizeValues.size();
-
-        Double trueToSizeValue = controller.getTrueToSizeValue(sneakerName).getBody();
-        assertThat(trueToSizeValue).isEqualTo(averageTrueToSizeValue);
     }
 
     @Test
@@ -164,18 +133,37 @@ public class SneakersControllerTest {
 
         sneakers.save(new Sneaker(sneakerInDatabase_withNoCrowdsourceData));
 
-        mockMvc.perform(
-                get(uri(TEST_DOMAIN, sneakerInDatabase_withNoCrowdsourceData)))
-                .andDo(print())
-                .andExpect(status().is(204));
-        mockMvc.perform(
-                get(uri(TEST_DOMAIN, sneakerNotInDatabase)))
-                .andDo(print())
-                .andExpect(status().is(204));
-
+        getSneakerNoDataAvailable(sneakerInDatabase_withNoCrowdsourceData);
+        getSneakerNoDataAvailable(sneakerNotInDatabase);
     }
 
-    public static String uri(String... path) {
+
+    private void postSuccessfulCrowdsourceData(String sneakerName, int trueToSizeValue) throws Exception {
+        mockMvc.perform(
+                post(uri(TEST_DOMAIN, "crowdsource"))
+                        .content(createAddSneakerDataRequest(sneakerName, trueToSizeValue).toString())
+                        .contentType("application/json"))
+                .andDo(print())
+                .andExpect(status().isOk());
+    }
+
+    private void postFailedCrowdsourceData(String sneakerName, int trueToSizeValue) throws Exception {
+        mockMvc.perform(
+                post(uri(TEST_DOMAIN, "crowdsource"))
+                        .content(createAddSneakerDataRequest(sneakerName, trueToSizeValue).toString())
+                        .contentType("application/json"))
+                .andDo(print())
+                .andExpect(status().isBadRequest());
+    }
+
+    private void getSneakerNoDataAvailable(String sneakerName) throws Exception {
+        mockMvc.perform(
+                get(uri(TEST_DOMAIN, sneakerName)))
+                .andDo(print())
+                .andExpect(status().is(204));
+    }
+
+    private static String uri(String... path) {
         return "/" + String.join("/", path);
     }
 
